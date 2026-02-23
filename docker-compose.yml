@@ -1,0 +1,58 @@
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - app
+    networks:
+      - table-link-network
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      - db
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=table_link
+      - DB_USERNAME=table_link_user
+      - DB_PASSWORD=table_link_pass
+    networks:
+      - table-link-network
+    command: sh -c "chmod -R 755 /var/www/html/storage && php-fpm"
+
+  db:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=table_link
+      - MYSQL_USER=table_link_user
+      - MYSQL_PASSWORD=table_link_pass
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - table-link-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  table-link-network:
+    driver: bridge
+
+volumes:
+  db-data:
