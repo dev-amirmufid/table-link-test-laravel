@@ -11,8 +11,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, SoftDeletes, HasApiTokens;
+    use HasFactory, Notifiable, HasApiTokens, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -52,7 +51,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if user is admin.
+     * Check if user is admin
      */
     public function isAdmin(): bool
     {
@@ -60,10 +59,10 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if user is regular user.
+     * Check if user has specific role
      */
-    public function isUser(): bool
+    public function hasRole(string $role): bool
     {
-        return $this->role === 'user';
+        return $this->role === $role;
     }
 }

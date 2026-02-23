@@ -1,52 +1,54 @@
 <?php
 
+use App\Http\Controllers\Web\Auth\WebAuthController;
+use App\Http\Controllers\Web\Dashboard\UserDashboardController;
+use App\Http\Controllers\Web\Dashboard\WebDashboardController;
+use App\Http\Controllers\Web\Users\WebUserController;
+use App\Http\Controllers\Web\Flights\WebFlightController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Web\AuthWebController;
-use App\Http\Controllers\Web\WebController;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
-
-// Redirect root to login
+// Root redirect
 Route::get('/', function () {
-    return redirect('/login');
+    return redirect()->route('login');
 });
 
-// Authentication routes - guest only
+// Guest routes (not logged in)
 Route::middleware('guest')->group(function () {
-    Route::get('/login', [AuthWebController::class, 'login'])->name('auth.login');
-    Route::post('/login', [AuthWebController::class, 'webLogin'])->name('auth.login.post');
-    
-    Route::get('/register', [AuthWebController::class, 'register'])->name('auth.register');
-    Route::post('/register', [AuthWebController::class, 'webRegister'])->name('auth.register.post');
+    Route::get('/login', [WebAuthController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [WebAuthController::class, 'login']);
+    Route::get('/register', [WebAuthController::class, 'showRegisterForm'])->name('register');
+    Route::post('/register', [WebAuthController::class, 'register']);
 });
 
-// Protected routes - require authentication
+// Protected routes (Session-based)
 Route::middleware('auth')->group(function () {
     // Logout
-    Route::get('/logout', [AuthWebController::class, 'webLogout'])->name('auth.logout');
-    Route::post('/logout', [AuthWebController::class, 'webLogout']);
+    Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
 
-    // Admin routes - role:admin only
-    Route::middleware('web.role:admin')->group(function () {
-        Route::get('/dashboard', [WebController::class, 'adminDashboard'])->name('admin.dashboard');
-        Route::get('/dashboard/data', [WebController::class, 'dashboardData'])->name('admin.dashboard.data');
-        Route::get('/users', [WebController::class, 'users'])->name('admin.users');
-        Route::put('/users/{id}', [WebController::class, 'updateUser'])->name('admin.users.update');
-        Route::delete('/users/{id}', [WebController::class, 'deleteUser'])->name('admin.users.destroy');
-        Route::get('/flights', [WebController::class, 'flights'])->name('admin.flights');
-    });
-    
-    // User routes - role:user only
-    Route::middleware('web.role:user')->group(function () {
-        Route::get('/user/dashboard', [WebController::class, 'userDashboard'])->name('user.dashboard');
+    // User Dashboard
+    Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
+
+    // Admin routes
+    Route::middleware('web.role:admin')->prefix('admin')->group(function () {
+        // Dashboard
+        Route::get('/dashboard', [WebDashboardController::class, 'index'])->name('admin.dashboard');
+
+        // User Management
+        Route::get('/users', [WebUserController::class, 'index'])->name('admin.users.index');
+        Route::get('/users/create', [WebUserController::class, 'create'])->name('admin.users.create');
+        Route::post('/users', [WebUserController::class, 'store'])->name('admin.users.store');
+        Route::get('/users/{id}', [WebUserController::class, 'show'])->name('admin.users.show');
+        Route::get('/users/{id}/edit', [WebUserController::class, 'edit'])->name('admin.users.edit');
+        Route::put('/users/{id}', [WebUserController::class, 'update'])->name('admin.users.update');
+        Route::delete('/users/{id}', [WebUserController::class, 'destroy'])->name('admin.users.destroy');
+
+        // Flight Information
+        Route::get('/flights', [WebFlightController::class, 'index'])->name('admin.flights.index');
+        Route::get('/flights/create', [WebFlightController::class, 'create'])->name('admin.flights.create');
+        Route::post('/flights', [WebFlightController::class, 'store'])->name('admin.flights.store');
+        Route::get('/flights/{id}/edit', [WebFlightController::class, 'edit'])->name('admin.flights.edit');
+        Route::put('/flights/{id}', [WebFlightController::class, 'update'])->name('admin.flights.update');
+        Route::delete('/flights/{id}', [WebFlightController::class, 'destroy'])->name('admin.flights.destroy');
+        Route::post('/flights/scrape', [WebFlightController::class, 'scrape'])->name('admin.flights.scrape');
     });
 });

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\Api\RoleApiMiddleware;
+use App\Http\Middleware\Web\RoleWebMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,13 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'role' => \App\Http\Middleware\RoleMiddleware::class,
-            'web.role' => \App\Http\Middleware\WebRoleMiddleware::class,
-            'api.auth' => \App\Http\Middleware\ApiAuthMiddleware::class,
-        ]);
-        
-        $middleware->group('api', [
-            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            'api.role' => RoleApiMiddleware::class,
+            'web.role' => RoleWebMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

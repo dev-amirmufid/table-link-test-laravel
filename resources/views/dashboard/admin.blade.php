@@ -3,161 +3,156 @@
 @section('title', 'Admin Dashboard')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Admin Dashboard</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary">Today</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary">This Week</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary">This Month</button>
-        </div>
-    </div>
-</div>
+<div class="space-y-6">
+    <h1 class="text-2xl font-bold">Admin Dashboard</h1>
 
-<!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-md-3 mb-3">
-        <div class="card text-white bg-primary">
-            <div class="card-body">
-                <h5 class="card-title">Total Users</h5>
-                <p class="card-text display-4">{{ App\Models\User::count() }}</p>
-            </div>
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white p-6 rounded-lg shadow">
+            <p class="text-gray-500 text-sm">Total Users</p>
+            <p class="text-3xl font-bold text-blue-600">{{ $stats['total_users'] }}</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow">
+            <p class="text-gray-500 text-sm">Total Flights</p>
+            <p class="text-3xl font-bold text-green-600">{{ $stats['total_flights'] }}</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow">
+            <p class="text-gray-500 text-sm">Admins</p>
+            <p class="text-3xl font-bold text-purple-600">{{ $stats['total_admins'] }}</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow">
+            <p class="text-gray-500 text-sm">Regular Users</p>
+            <p class="text-3xl font-bold text-orange-600">{{ $stats['total_regular_users'] }}</p>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card text-white bg-success">
-            <div class="card-body">
-                <h5 class="card-title">Admin Users</h5>
-                <p class="card-text display-4">{{ App\Models\User::where('role', 'admin')->count() }}</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 mb-3">
-        <div class="card text-white bg-info">
-            <div class="card-body">
-                <h5 class="card-title">Regular Users</h5>
-                <p class="card-text display-4">{{ App\Models\User::where('role', 'user')->count() }}</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3 mb-3">
-        <div class="card text-white bg-warning">
-            <div class="card-body">
-                <h5 class="card-title">Active Today</h5>
-                <p class="card-text display-4">{{ App\Models\User::whereDate('last_login', today())->count() }}</p>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Charts Section -->
-<div class="row">
-    <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">User Registration Trend</h5>
-            </div>
-            <div class="card-body">
-                <div style="height: 300px;">
-                    <canvas id="usersChart"></canvas>
-                </div>
-            </div>
+    <!-- Charts -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Line Chart -->
+        <div class="bg-white p-6 rounded-lg shadow md:col-span-2">
+            <h3 class="text-lg font-semibold mb-4">Revenue vs Expenses vs Profit</h3>
+            <canvas id="lineChart"></canvas>
         </div>
-    </div>
-    <div class="col-md-6 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">User Roles Distribution</h5>
-            </div>
-            <div class="card-body">
-                <div style="height: 300px;">
-                    <canvas id="rolesChart"></canvas>
-                </div>
-            </div>
+
+        <!-- Bar Chart -->
+        <div class="bg-white p-6 rounded-lg shadow md:col-span-2">
+            <h3 class="text-lg font-semibold mb-4">Monthly Revenue vs Expenses</h3>
+            <canvas id="barChart"></canvas>
         </div>
-    </div>
-    <div class="col-md-12 mb-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">User Activity</h5>
-            </div>
-            <div class="card-body">
-                <div style="height: 300px;">
-                    <canvas id="activityChart"></canvas>
-                </div>
+
+        <!-- Pie Chart -->
+        <div class="bg-white p-6 rounded-lg shadow md:col-span-2">
+            <h3 class="text-lg font-semibold mb-4">Product Distribution</h3>
+            <div class="max-w-md mx-auto">
+                <canvas id="pieChart"></canvas>
             </div>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
-    // Fetch chart data from API
-    async function loadCharts() {
-        try {
-            const response = await fetch('/dashboard/data', {
-                headers: {
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+    // Line Chart - Revenue, Expenses, Profit Margin
+    const lineCtx = document.getElementById('lineChart').getContext('2d');
+    new Chart(lineCtx, {
+        type: 'line',
+        data: {
+            labels: @json($lineChartData['data']['labels'] ?? []),
+            datasets: @json($lineChartData['data']['datasets'] ?? [])
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
                 }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch dashboard data');
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Bulan'
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'USD'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                    title: {
+                        display: true,
+                        text: 'Profit (%)'
+                    }
+                }
             }
-
-            const data = await response.json();
-
-            // Line Chart - User Registration
-            new Chart(document.getElementById('usersChart'), {
-                type: 'line',
-                data: data.usersChart,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    }
-                }
-            });
-
-            // Pie Chart - Roles Distribution
-            new Chart(document.getElementById('rolesChart'), {
-                type: 'pie',
-                data: data.rolesChart,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    }
-                }
-            });
-
-            // Bar Chart - User Activity
-            new Chart(document.getElementById('activityChart'), {
-                type: 'bar',
-                data: data.activityChart,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    }
-                }
-            });
-        } catch (error) {
-            console.error('Error loading charts:', error);
-            alert('Error loading dashboard data. Please refresh the page.');
         }
-    }
+    });
 
-    document.addEventListener('DOMContentLoaded', loadCharts);
+    // Bar Chart - Monthly Revenue vs Expenses
+    const barCtx = document.getElementById('barChart').getContext('2d');
+    new Chart(barCtx, {
+        type: 'bar',
+        data: {
+            labels: @json($barChartData['data']['labels'] ?? []),
+            datasets: @json($barChartData['data']['datasets'] ?? [])
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Month'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'USD'
+                    }
+                }
+            }
+        }
+    });
+
+    // Pie Chart - Product Distribution
+    const pieCtx = document.getElementById('pieChart').getContext('2d');
+    new Chart(pieCtx, {
+        type: 'pie',
+        data: {
+            labels: @json($pieChartData['data']['labels'] ?? []),
+            datasets: @json($pieChartData['data']['datasets'] ?? [])
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right',
+                }
+            }
+        }
+    });
 </script>
 @endsection

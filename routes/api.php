@@ -1,51 +1,44 @@
 <?php
 
+use App\Http\Controllers\Api\Auth\ApiAuthController;
+use App\Http\Controllers\Api\Users\ApiUserController;
+use App\Http\Controllers\Api\Dashboard\ApiDashboardController;
+use App\Http\Controllers\Api\Flights\ApiFlightController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\API\AuthAPIController;
-use App\Http\Controllers\API\UserAPIController;
-use App\Http\Controllers\API\DashboardAPIController;
-use App\Http\Controllers\API\FlightAPIController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Build something great!
-|
-*/
+// Public API routes
+Route::prefix('auth')->group(function () {
+    Route::post('/register', [ApiAuthController::class, 'register']);
+    Route::post('/login', [ApiAuthController::class, 'login']);
+});
 
-// Authentication routes
-Route::post('/auth/register', [AuthAPIController::class, 'register']);
-Route::post('/auth/login', [AuthAPIController::class, 'login']);
-
-// Protected routes
-Route::middleware('api.auth')->group(function () {
+// Protected API routes (Token-based)
+Route::middleware('auth:sanctum')->group(function () {
     // Auth
-    Route::post('/auth/logout', [AuthAPIController::class, 'logout']);
-    Route::get('/auth/me', [AuthAPIController::class, 'me']);
-
-    // Admin routes
-    Route::middleware('role:admin')->group(function () {
-        // User management
-        Route::get('/users', [UserAPIController::class, 'index'])->name('api.admin.users.index');
-        Route::post('/users', [UserAPIController::class, 'store'])->name('api.admin.users.store');
-        Route::get('/users/{id}', [UserAPIController::class, 'show'])->name('api.admin.users.show');
-        Route::put('/users/{id}', [UserAPIController::class, 'update'])->name('api.admin.users.update');
-        Route::delete('/users/{id}', [UserAPIController::class, 'destroy'])->name('api.admin.users.destroy');
-
-        // Dashboard
-        Route::get('/dashboard', [DashboardAPIController::class, 'index'])->name('api.admin.dashboard');
-        Route::get('/dashboard/users-chart', [DashboardAPIController::class, 'usersChart']);
-        Route::get('/dashboard/roles-chart', [DashboardAPIController::class, 'rolesChart']);
-        Route::get('/dashboard/activity-chart', [DashboardAPIController::class, 'activityChart']);
-
-        // Flight information
-        Route::get('/flights', [FlightAPIController::class, 'index'])->name('api.admin.flights');
+    Route::prefix('auth')->group(function () {
+        Route::get('/user', [ApiAuthController::class, 'user']);
+        Route::post('/logout', [ApiAuthController::class, 'logout']);
     });
 
-    // User dashboard
-    Route::get('/user/dashboard', [DashboardAPIController::class, 'index'])->name('api.user.dashboard');
+    // User Management (Admin only)
+    Route::middleware('api.role:admin')->prefix('users')->group(function () {
+        Route::get('/', [ApiUserController::class, 'index']);
+        Route::get('/{id}', [ApiUserController::class, 'show']);
+        Route::put('/{id}', [ApiUserController::class, 'update']);
+        Route::delete('/{id}', [ApiUserController::class, 'destroy']);
+    });
+
+    // Dashboard (Admin only)
+    Route::middleware('api.role:admin')->prefix('dashboard')->group(function () {
+        Route::get('/charts', [ApiDashboardController::class, 'charts']);
+    });
+
+    // Flight Information (Admin only)
+    Route::middleware('api.role:admin')->prefix('flights')->group(function () {
+        Route::get('/', [ApiFlightController::class, 'index']);
+        Route::post('/scrape', [ApiFlightController::class, 'scrape']);
+        Route::get('/{id}', [ApiFlightController::class, 'show']);
+        Route::put('/{id}', [ApiFlightController::class, 'update']);
+        Route::delete('/{id}', [ApiFlightController::class, 'destroy']);
+    });
 });

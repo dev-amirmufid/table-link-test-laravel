@@ -1,83 +1,60 @@
-@extends('auth.layout')
+@extends('layouts.app')
 
 @section('title', 'Register')
 
 @section('content')
-@if(session('error'))
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="bi bi-exclamation-triangle me-2"></i>{{ session('error') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif
+<div class="min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h2 class="text-2xl font-bold text-center mb-6">Register for TableLink</h2>
 
-@if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif
+        <form method="POST" action="{{ route('register') }}">
+            @csrf
 
-<h5 class="text-center mb-4">Create Account</h5>
-
-<form method="POST" action="{{ route('auth.register.post') }}">
-    @csrf
-    
-    <div class="mb-3">
-        <label for="name" class="form-label">Full Name</label>
-        <div class="input-group">
-            <span class="input-group-text"><i class="bi bi-person"></i></span>
-            <input type="text" class="form-control" id="name" name="name" value="{{ old('name') }}" required placeholder="Enter your full name">
-        </div>
-        @error('name')
-            <div class="text-danger small mt-1">
-                <i class="bi bi-exclamation-circle"></i> {{ $message }}
+            <div class="mb-4">
+                <label for="name" class="block text-gray-700 text-sm font-bold mb-2">Name</label>
+                <input type="text" id="name" name="name" value="{{ old('name') }}"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required autofocus>
+                @error('name')
+                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
             </div>
-        @enderror
-    </div>
-    
-    <div class="mb-3">
-        <label for="email" class="form-label">Email Address</label>
-        <div class="input-group">
-            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-            <input type="email" class="form-control" id="email" name="email" value="{{ old('email') }}" required placeholder="name@example.com">
-        </div>
-        @error('email')
-            <div class="text-danger small mt-1">
-                <i class="bi bi-exclamation-circle"></i> {{ $message }}
-            </div>
-        @enderror
-    </div>
-    
-    <div class="mb-3">
-        <label for="password" class="form-label">Password</label>
-        <div class="input-group">
-            <span class="input-group-text"><i class="bi bi-lock"></i></span>
-            <input type="password" class="form-control" id="password" name="password" required placeholder="Create a strong password">
-        </div>
-        @error('password')
-            <div class="text-danger small mt-1">
-                <i class="bi bi-exclamation-circle"></i> {{ $message }}
-            </div>
-        @enderror
-    </div>
-    
-    <div class="mb-3">
-        <label for="password_confirmation" class="form-label">Confirm Password</label>
-        <div class="input-group">
-            <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-            <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" required placeholder="Re-enter your password">
-        </div>
-    </div>
-    
-    <div class="d-grid">
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-person-plus me-2"></i>Create Account
-        </button>
-    </div>
-</form>
 
-<p class="text-center mt-3 mb-0">
-    Already have an account? 
-    <a href="{{ route('auth.login') }}" class="text-decoration-none">Sign in here</a>
-</p>
+            <div class="mb-4">
+                <label for="email" class="block text-gray-700 text-sm font-bold mb-2">Email</label>
+                <input type="email" id="email" name="email" value="{{ old('email') }}"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required>
+                @error('email')
+                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="mb-4">
+                <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+                <input type="password" id="password" name="password"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required>
+                @error('password')
+                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="mb-6">
+                <label for="password_confirmation" class="block text-gray-700 text-sm font-bold mb-2">Confirm Password</label>
+                <input type="password" id="password_confirmation" name="password_confirmation"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required>
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition">
+                Register
+            </button>
+        </form>
+
+        <p class="mt-4 text-center text-sm text-gray-600">
+            Already have an account? <a href="{{ route('login') }}" class="text-blue-600 hover:underline">Login</a>
+        </p>
+    </div>
+</div>
 @endsection
