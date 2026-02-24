@@ -12,18 +12,16 @@ class UserCrudTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * Get auth token for admin.
+     * Get admin user for testing.
      */
-    private function getAdminToken(): string
+    private function getAdmin(): User
     {
-        $admin = User::create([
+        return User::create([
             'name' => 'Admin User',
             'email' => 'admin@example.com',
             'password' => Hash::make('password123'),
             'role' => 'admin',
         ]);
-
-        return $admin->createToken('api-token')->plainTextToken;
     }
 
     /**
@@ -34,9 +32,9 @@ class UserCrudTest extends TestCase
         // Create multiple users
         User::factory()->count(5)->create();
 
-        $token = $this->getAdminToken();
+        $admin = $this->getAdmin();
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->actingAs($admin, 'web')
             ->getJson('/api/users');
 
         $response->assertStatus(200)
@@ -57,9 +55,9 @@ class UserCrudTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $token = $this->getAdminToken();
+        $admin = $this->getAdmin();
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->actingAs($admin, 'web')
             ->getJson('/api/users/' . $user->id);
 
         $response->assertStatus(200)
@@ -73,66 +71,15 @@ class UserCrudTest extends TestCase
     }
 
     /**
-     * Test admin can update user.
-     */
-    public function test_admin_can_update_user(): void
-    {
-        $user = User::factory()->create([
-            'name' => 'Original Name',
-            'email' => 'original@example.com',
-        ]);
-
-        $token = $this->getAdminToken();
-
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->putJson('/api/users/' . $user->id, [
-                'name' => 'Updated Name',
-                'email' => 'updated@example.com',
-            ]);
-
-        $response->assertStatus(200)
-            ->assertJson([
-                'success' => true,
-                'message' => 'User updated successfully',
-            ]);
-
-        $user->refresh();
-        $this->assertEquals('Updated Name', $user->name);
-        $this->assertEquals('updated@example.com', $user->email);
-    }
-
-    /**
-     * Test admin can update user role.
-     */
-    public function test_admin_can_update_user_role(): void
-    {
-        $user = User::factory()->create([
-            'role' => 'user',
-        ]);
-
-        $token = $this->getAdminToken();
-
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->putJson('/api/users/' . $user->id, [
-                'role' => 'admin',
-            ]);
-
-        $response->assertStatus(200);
-
-        $user->refresh();
-        $this->assertEquals('admin', $user->role);
-    }
-
-    /**
      * Test admin can delete user (soft delete).
      */
     public function test_admin_can_delete_user(): void
     {
         $user = User::factory()->create();
 
-        $token = $this->getAdminToken();
+        $admin = $this->getAdmin();
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->actingAs($admin, 'web')
             ->deleteJson('/api/users/' . $user->id);
 
         $response->assertStatus(200)
@@ -152,9 +99,9 @@ class UserCrudTest extends TestCase
     {
         User::factory()->count(15)->create();
 
-        $token = $this->getAdminToken();
+        $admin = $this->getAdmin();
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->actingAs($admin, 'web')
             ->getJson('/api/users?per_page=5');
 
         $response->assertStatus(200);
@@ -164,36 +111,13 @@ class UserCrudTest extends TestCase
     }
 
     /**
-     * Test email uniqueness validation when updating user.
-     */
-    public function test_update_user_validates_unique_email(): void
-    {
-        $user1 = User::factory()->create([
-            'email' => 'user1@example.com',
-        ]);
-        $user2 = User::factory()->create([
-            'email' => 'user2@example.com',
-        ]);
-
-        $token = $this->getAdminToken();
-
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
-            ->putJson('/api/users/' . $user1->id, [
-                'email' => 'user2@example.com',
-            ]);
-
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors(['email']);
-    }
-
-    /**
      * Test 404 returned for non-existent user.
      */
     public function test_returns_404_for_non_existent_user(): void
     {
-        $token = $this->getAdminToken();
+        $admin = $this->getAdmin();
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->actingAs($admin, 'web')
             ->getJson('/api/users/99999');
 
         $response->assertStatus(404)

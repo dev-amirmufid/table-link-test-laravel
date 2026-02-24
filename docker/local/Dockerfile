@@ -39,8 +39,18 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache
 
-# Expose port
-EXPOSE 8000
+# Configure PHP-FPM
+RUN echo "[www]" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
+    && echo "php_admin_value[sys_temp_dir] = /var/www/html/storage/tmp" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
+    && echo "php_admin_value[upload_tmp_dir] = /var/www/html/storage/tmp" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
+    && echo "php_admin_value[open_basedir] = /var/www/html" >> /usr/local/etc/php-fpm.d/zz-docker.conf
 
-# Start Laravel
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+# Create temp directory in storage
+RUN mkdir -p /var/www/html/storage/tmp \
+    && chmod 777 /var/www/html/storage/tmp
+
+# Expose port 9000 for PHP-FPM
+EXPOSE 9000
+
+# Start PHP-FPM
+CMD ["php-fpm"]

@@ -5,14 +5,20 @@ namespace App\Http\Controllers\Api\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\ApiAuthRequest;
 use App\Http\Requests\Api\ApiLoginRequest;
-use App\Models\User;
+use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Auth;
 
 class ApiAuthController extends Controller
 {
+    protected $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
+
     /**
      * Register new user
      */
@@ -20,22 +26,13 @@ class ApiAuthController extends Controller
     {
         try {
             $validated = $request->validated();
-
-            $user = User::create([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'password' => $validated['password'],
-                'role' => 'user',
-            ]);
-
-            // Create token
-            $token = $user->createToken('api-token')->plainTextToken;
+            $result = $this->authService->register($validated);
 
             return response()->json([
                 'success' => true,
                 'message' => 'User registered successfully',
-                'user' => $user,
-                'token' => $token,
+                'user' => $result['user'],
+                'token' => $result['token'],
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
@@ -52,33 +49,19 @@ class ApiAuthController extends Controller
     {
         try {
             $validated = $request->validated();
-
-            $user = User::where('email', $validated['email'])->first();
-
-            if (!$user || !Hash::check($validated['password'], $user->password)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid credentials',
-                ], 401);
-            }
-
-            // Update last login
-            $user->update(['last_login' => now()]);
-
-            // Create token
-            $token = $user->createToken('api-token')->plainTextToken;
+            $result = $this->authService->login($validated);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Login successful',
-                'user' => $user,
-                'token' => $token,
+                'user' => $result['user'],
+                'token' => $result['token'],
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Login failed: ' . $e->getMessage(),
-            ], 500);
+                'message' => 'Invalid credentials',
+            ], 401);
         }
     }
 
@@ -99,7 +82,13 @@ class ApiAuthController extends Controller
     public function logout(Request $request): JsonResponse
     {
         try {
-            $request->user()->currentAccessToken()->delete();
+            $user = $request->user();
+            $this->authService->logout($user);
+
+            // For session-based auth, logout from session
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
 
             return response()->json([
                 'success' => true,

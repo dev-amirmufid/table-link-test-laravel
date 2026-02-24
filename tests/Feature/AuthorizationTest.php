@@ -23,9 +23,7 @@ class AuthorizationTest extends TestCase
             'role' => 'admin',
         ]);
 
-        $token = $admin->createToken('api-token')->plainTextToken;
-
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->actingAs($admin, 'web')
             ->getJson('/api/dashboard/charts');
 
         $response->assertStatus(200)
@@ -52,9 +50,7 @@ class AuthorizationTest extends TestCase
             'role' => 'user',
         ]);
 
-        $token = $user->createToken('api-token')->plainTextToken;
-
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->actingAs($user, 'web')
             ->getJson('/api/dashboard/charts');
 
         $response->assertStatus(403)
@@ -75,9 +71,7 @@ class AuthorizationTest extends TestCase
             'role' => 'admin',
         ]);
 
-        $token = $admin->createToken('api-token')->plainTextToken;
-
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->actingAs($admin, 'web')
             ->getJson('/api/users');
 
         $response->assertStatus(200)
@@ -99,9 +93,7 @@ class AuthorizationTest extends TestCase
             'role' => 'user',
         ]);
 
-        $token = $user->createToken('api-token')->plainTextToken;
-
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->actingAs($user, 'web')
             ->getJson('/api/users');
 
         $response->assertStatus(403);
@@ -119,9 +111,7 @@ class AuthorizationTest extends TestCase
             'role' => 'admin',
         ]);
 
-        $token = $admin->createToken('api-token')->plainTextToken;
-
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->actingAs($admin, 'web')
             ->getJson('/api/flights');
 
         $response->assertStatus(200)
@@ -143,9 +133,7 @@ class AuthorizationTest extends TestCase
             'role' => 'user',
         ]);
 
-        $token = $user->createToken('api-token')->plainTextToken;
-
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->actingAs($user, 'web')
             ->getJson('/api/flights');
 
         $response->assertStatus(403);

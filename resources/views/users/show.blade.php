@@ -10,13 +10,19 @@
             <a href="{{ route('admin.users.index') }}" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
                 Back
             </a>
-            <a href="{{ route('admin.users.edit', $user->id) }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            <a id="editLink" href="#" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                 Edit
             </a>
         </div>
     </div>
 
-    <div class="bg-white rounded-lg shadow overflow-hidden">
+    <!-- Loading -->
+    <div id="loadingMessage" class="bg-white rounded-lg shadow p-6 text-center text-gray-500">
+        Loading user data...
+    </div>
+
+    <!-- User Details -->
+    <div id="userDetails" class="bg-white rounded-lg shadow overflow-hidden hidden">
         <div class="p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Basic Info -->
@@ -26,24 +32,24 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-500">ID</label>
-                    <p class="mt-1 text-gray-900">{{ $user->id }}</p>
+                    <p id="userId" class="mt-1 text-gray-900">-</p>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-500">Name</label>
-                    <p class="mt-1 text-gray-900">{{ $user->name }}</p>
+                    <p id="userName" class="mt-1 text-gray-900">-</p>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-500">Email</label>
-                    <p class="mt-1 text-gray-900">{{ $user->email }}</p>
+                    <p id="userEmail" class="mt-1 text-gray-900">-</p>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-500">Role</label>
                     <p class="mt-1">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $user->role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800' }}">
-                            {{ ucfirst($user->role) }}
+                        <span id="userRole" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                            -
                         </span>
                     </p>
                 </div>
@@ -55,45 +61,102 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-500">Created At</label>
-                    <p class="mt-1 text-gray-900">{{ $user->created_at->format('Y-m-d H:i:s') }}</p>
+                    <p id="createdAt" class="mt-1 text-gray-900">-</p>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-500">Updated At</label>
-                    <p class="mt-1 text-gray-900">{{ $user->updated_at->format('Y-m-d H:i:s') }}</p>
+                    <p id="updatedAt" class="mt-1 text-gray-900">-</p>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-500">Last Login</label>
-                    <p class="mt-1 text-gray-900">{{ $user->last_login ? $user->last_login->format('Y-m-d H:i:s') : 'Never' }}</p>
+                    <p id="lastLogin" class="mt-1 text-gray-900">-</p>
                 </div>
 
-                <!-- Deleted At (if soft deleted) -->
-                @if($user->deleted_at)
-                <div class="col-span-2 mt-4">
+                <!-- Deleted At -->
+                <div id="deletedSection" class="col-span-2 mt-4 hidden">
                     <h3 class="text-lg font-semibold border-b pb-2 mb-4 text-red-600">Deleted</h3>
                 </div>
 
-                <div>
+                <div id="deletedAt" class="hidden">
                     <label class="block text-sm font-medium text-gray-500">Deleted At</label>
-                    <p class="mt-1 text-red-600">{{ $user->deleted_at->format('Y-m-d H:i:s') }}</p>
+                    <p class="mt-1 text-red-600">-</p>
                 </div>
-                @endif
             </div>
         </div>
     </div>
 
     <!-- Delete Button -->
-    @if(!$user->deleted_at && $user->id !== auth()->id())
-    <div class="mt-6 flex justify-end">
-        <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this user?')">
-            @csrf
-            @method('DELETE')
-            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-                Delete User
-            </button>
-        </form>
+    <div id="deleteSection" class="mt-6 flex justify-end hidden">
+        <button id="deleteBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+            Delete User
+        </button>
     </div>
-    @endif
 </div>
+
+@push('scripts')
+<script>
+const userId = {{ $userId }};
+
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        const response = await apiGet(`/users/${userId}`);
+        const user = response.data.user;
+
+        // Update user details
+        document.getElementById('userId').textContent = user.id;
+        document.getElementById('userName').textContent = user.name;
+        document.getElementById('userEmail').textContent = user.email;
+        document.getElementById('createdAt').textContent = formatDate(user.created_at);
+        document.getElementById('updatedAt').textContent = formatDate(user.updated_at);
+        document.getElementById('lastLogin').textContent = user.last_login ? formatDate(user.last_login) : 'Never';
+
+        // Update role badge
+        const roleEl = document.getElementById('userRole');
+        roleEl.textContent = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+        roleEl.className = `px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}`;
+
+        // Update edit link
+        document.getElementById('editLink').href = `/admin/users/${user.id}/edit`;
+
+        // Show deleted info if applicable
+        if (user.deleted_at) {
+            document.getElementById('deletedSection').classList.remove('hidden');
+            document.getElementById('deletedAt').classList.remove('hidden');
+            document.getElementById('deletedAt').querySelector('p').textContent = formatDate(user.deleted_at);
+            document.getElementById('deleteSection').classList.add('hidden');
+        } else {
+            document.getElementById('deleteSection').classList.remove('hidden');
+        }
+
+        // Show content
+        document.getElementById('loadingMessage').classList.add('hidden');
+        document.getElementById('userDetails').classList.remove('hidden');
+
+    } catch (error) {
+        console.error('Error loading user:', error);
+        document.getElementById('loadingMessage').textContent = 'Error loading user data';
+    }
+});
+
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toISOString().replace('T', ' ').substring(0, 19);
+}
+
+// Delete handler
+document.getElementById('deleteBtn')?.addEventListener('click', async function() {
+    if (!confirm('Are you sure you want to delete this user?')) return;
+
+    try {
+        await apiDelete(`/users/${userId}`);
+        window.location.href = '{{ route("admin.users.index") }}';
+    } catch (error) {
+        alert('Error deleting user');
+    }
+});
+</script>
+@endpush
 @endsection

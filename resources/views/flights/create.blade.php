@@ -7,68 +7,54 @@
     <h1 class="text-2xl font-bold mb-6">Add Flight</h1>
 
     <div class="bg-white rounded-lg shadow p-6">
-        <form method="POST" action="{{ route('admin.flights.store') }}">
-            @csrf
-
+        <form id="createFlightForm">
             <div class="mb-4">
                 <label for="airline_name" class="block text-gray-700 text-sm font-bold mb-2">Airline Name</label>
-                <input type="text" id="airline_name" name="airline_name" value="{{ old('airline_name') }}"
+                <input type="text" id="airline_name" name="airline_name"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required>
-                @error('airline_name')
-                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                @enderror
+                <p id="airline_nameError" class="text-red-500 text-xs mt-1 hidden"></p>
             </div>
 
             <div class="mb-4">
                 <label for="flight_number" class="block text-gray-700 text-sm font-bold mb-2">Flight Number</label>
-                <input type="text" id="flight_number" name="flight_number" value="{{ old('flight_number') }}"
+                <input type="text" id="flight_number" name="flight_number"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="GA 401" required>
-                @error('flight_number')
-                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                @enderror
+                <p id="flight_numberError" class="text-red-500 text-xs mt-1 hidden"></p>
             </div>
 
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div>
                     <label for="departure_airport" class="block text-gray-700 text-sm font-bold mb-2">Departure Airport</label>
-                    <input type="text" id="departure_airport" name="departure_airport" value="{{ old('departure_airport', 'CGK') }}"
+                    <input type="text" id="departure_airport" name="departure_airport" value="CGK"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required>
-                    @error('departure_airport')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
+                    <p id="departure_airportError" class="text-red-500 text-xs mt-1 hidden"></p>
                 </div>
                 <div>
                     <label for="arrival_airport" class="block text-gray-700 text-sm font-bold mb-2">Arrival Airport</label>
-                    <input type="text" id="arrival_airport" name="arrival_airport" value="{{ old('arrival_airport', 'DPS') }}"
+                    <input type="text" id="arrival_airport" name="arrival_airport" value="DPS"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required>
-                    @error('arrival_airport')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
+                    <p id="arrival_airportError" class="text-red-500 text-xs mt-1 hidden"></p>
                 </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div>
                     <label for="departure_time" class="block text-gray-700 text-sm font-bold mb-2">Departure Time</label>
-                    <input type="time" id="departure_time" name="departure_time" value="{{ old('departure_time') }}"
+                    <input type="time" id="departure_time" name="departure_time"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required>
-                    @error('departure_time')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
+                    <p id="departure_timeError" class="text-red-500 text-xs mt-1 hidden"></p>
                 </div>
                 <div>
                     <label for="price" class="block text-gray-700 text-sm font-bold mb-2">Price</label>
-                    <input type="number" id="price" name="price" value="{{ old('price') }}"
+                    <input type="number" id="price" name="price"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="750000" required>
-                    @error('price')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
+                    <p id="priceError" class="text-red-500 text-xs mt-1 hidden"></p>
                 </div>
             </div>
 
@@ -78,8 +64,8 @@
                     <select id="flight_type" name="flight_type"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required>
-                        <option value="one-way" {{ old('flight_type') === 'one-way' ? 'selected' : '' }}>One Way</option>
-                        <option value="round-trip" {{ old('flight_type') === 'round-trip' ? 'selected' : '' }}>Round Trip</option>
+                        <option value="one-way">One Way</option>
+                        <option value="round-trip">Round Trip</option>
                     </select>
                 </div>
                 <div>
@@ -87,16 +73,18 @@
                     <select id="class_type" name="class_type"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required>
-                        <option value="economy" {{ old('class_type') === 'economy' ? 'selected' : '' }}>Economy</option>
-                        <option value="business" {{ old('class_type') === 'business' ? 'selected' : '' }}>Business</option>
-                        <option value="first-class" {{ old('class_type') === 'first-class' ? 'selected' : '' }}>First Class</option>
+                        <option value="economy">Economy</option>
+                        <option value="business">Business</option>
+                        <option value="first">First Class</option>
                     </select>
                 </div>
             </div>
 
+            <div id="successMessage" class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative hidden"></div>
+
             <div class="flex items-center justify-end">
                 <a href="{{ route('admin.flights.index') }}" class="text-gray-600 hover:text-gray-800 mr-4">Cancel</a>
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                <button type="submit" id="submitBtn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
                     Create Flight
                 </button>
             </div>
@@ -104,3 +92,5 @@
     </div>
 </div>
 @endsection
+
+@vite(['resources/js/pages/form.js'])

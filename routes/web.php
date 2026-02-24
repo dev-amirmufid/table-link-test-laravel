@@ -20,7 +20,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [WebAuthController::class, 'register']);
 });
 
-// Protected routes (Session-based)
+// Protected routes (Session-based authentication with Sanctum SPA)
 Route::middleware('auth')->group(function () {
     // Logout
     Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
@@ -28,8 +28,8 @@ Route::middleware('auth')->group(function () {
     // User Dashboard
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
 
-    // Admin routes
-    Route::middleware('web.role:admin')->prefix('admin')->group(function () {
+    // Admin routes (using role middleware)
+    Route::middleware('role:admin')->prefix('admin')->group(function () {
         // Dashboard
         Route::get('/dashboard', [WebDashboardController::class, 'index'])->name('admin.dashboard');
 
@@ -38,16 +38,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/users/create', [WebUserController::class, 'create'])->name('admin.users.create');
         Route::post('/users', [WebUserController::class, 'store'])->name('admin.users.store');
         Route::get('/users/{id}', [WebUserController::class, 'show'])->name('admin.users.show');
-        Route::get('/users/{id}/edit', [WebUserController::class, 'edit'])->name('admin.users.edit');
-        Route::put('/users/{id}', [WebUserController::class, 'update'])->name('admin.users.update');
         Route::delete('/users/{id}', [WebUserController::class, 'destroy'])->name('admin.users.destroy');
 
         // Flight Information
         Route::get('/flights', [WebFlightController::class, 'index'])->name('admin.flights.index');
         Route::get('/flights/create', [WebFlightController::class, 'create'])->name('admin.flights.create');
         Route::post('/flights', [WebFlightController::class, 'store'])->name('admin.flights.store');
-        Route::get('/flights/{id}/edit', [WebFlightController::class, 'edit'])->name('admin.flights.edit');
-        Route::put('/flights/{id}', [WebFlightController::class, 'update'])->name('admin.flights.update');
+        Route::get('/flights/{id}', [WebFlightController::class, 'show'])->name('admin.flights.show');
         Route::delete('/flights/{id}', [WebFlightController::class, 'destroy'])->name('admin.flights.destroy');
         Route::post('/flights/scrape', [WebFlightController::class, 'scrape'])->name('admin.flights.scrape');
     });

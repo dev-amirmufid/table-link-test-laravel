@@ -13,18 +13,16 @@ class DashboardTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * Get auth token for admin.
+     * Get admin user for testing.
      */
-    private function getAdminToken(): string
+    private function getAdmin(): User
     {
-        $admin = User::create([
+        return User::create([
             'name' => 'Admin User',
             'email' => 'admin@example.com',
             'password' => Hash::make('password123'),
             'role' => 'admin',
         ]);
-
-        return $admin->createToken('api-token')->plainTextToken;
     }
 
     /**
@@ -46,16 +44,16 @@ class DashboardTest extends TestCase
         // Create flights
         Flight::factory()->count(10)->create();
 
-        $token = $this->getAdminToken();
+        $admin = $this->getAdmin();
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->actingAs($admin, 'web')
             ->getJson('/api/dashboard/charts');
 
         $response->assertStatus(200)
             ->assertJson([
                 'success' => true,
                 'stats' => [
-                    'total_users' => 7, // 5 users + 1 admin from getAdminToken + 1 admin above = 7
+                    'total_users' => 7, // 5 users + 1 admin from getAdmin + 1 admin above = 7
                     'total_flights' => 10,
                 ],
             ]);
@@ -66,9 +64,9 @@ class DashboardTest extends TestCase
      */
     public function test_dashboard_returns_chart_data_structure(): void
     {
-        $token = $this->getAdminToken();
+        $admin = $this->getAdmin();
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->actingAs($admin, 'web')
             ->getJson('/api/dashboard/charts');
 
         $response->assertStatus(200)
@@ -77,15 +75,15 @@ class DashboardTest extends TestCase
                 'charts' => [
                     'line' => [
                         'labels',
-                        'data',
+                        'datasets',
                     ],
                     'bar' => [
                         'labels',
-                        'data',
+                        'datasets',
                     ],
                     'pie' => [
                         'labels',
-                        'data',
+                        'datasets',
                     ],
                 ],
                 'stats' => [
@@ -102,16 +100,16 @@ class DashboardTest extends TestCase
      */
     public function test_line_chart_has_data(): void
     {
-        $token = $this->getAdminToken();
+        $admin = $this->getAdmin();
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->actingAs($admin, 'web')
             ->getJson('/api/dashboard/charts');
 
         $response->assertStatus(200);
 
         $lineChart = $response->json('charts.line');
         $this->assertNotEmpty($lineChart['labels']);
-        $this->assertNotEmpty($lineChart['data']);
+        $this->assertNotEmpty($lineChart['datasets']);
     }
 
     /**
@@ -119,16 +117,16 @@ class DashboardTest extends TestCase
      */
     public function test_bar_chart_has_data(): void
     {
-        $token = $this->getAdminToken();
+        $admin = $this->getAdmin();
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->actingAs($admin, 'web')
             ->getJson('/api/dashboard/charts');
 
         $response->assertStatus(200);
 
         $barChart = $response->json('charts.bar');
         $this->assertNotEmpty($barChart['labels']);
-        $this->assertNotEmpty($barChart['data']);
+        $this->assertNotEmpty($barChart['datasets']);
     }
 
     /**
@@ -136,16 +134,16 @@ class DashboardTest extends TestCase
      */
     public function test_pie_chart_has_data(): void
     {
-        $token = $this->getAdminToken();
+        $admin = $this->getAdmin();
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->actingAs($admin, 'web')
             ->getJson('/api/dashboard/charts');
 
         $response->assertStatus(200);
 
         $pieChart = $response->json('charts.pie');
         $this->assertNotEmpty($pieChart['labels']);
-        $this->assertNotEmpty($pieChart['data']);
+        $this->assertNotEmpty($pieChart['datasets']);
     }
 
     /**
@@ -158,14 +156,14 @@ class DashboardTest extends TestCase
             'role' => 'admin',
         ]);
 
-        $token = $this->getAdminToken();
+        $admin = $this->getAdmin();
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->actingAs($admin, 'web')
             ->getJson('/api/dashboard/charts');
 
         $response->assertStatus(200);
 
-        // 2 admins from factory + 1 from getAdminToken = 3 admins
+        // 2 admins from factory + 1 from getAdmin = 3 admins
         $this->assertEquals(3, $response->json('stats.total_admins'));
     }
 
@@ -178,14 +176,14 @@ class DashboardTest extends TestCase
             'role' => 'user',
         ]);
 
-        $token = $this->getAdminToken();
+        $admin = $this->getAdmin();
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->actingAs($admin, 'web')
             ->getJson('/api/dashboard/charts');
 
         $response->assertStatus(200);
 
-        // 5 users from factory = 5 (getAdminToken creates admin)
+        // 5 users from factory = 5 (getAdmin creates admin)
         $this->assertEquals(5, $response->json('stats.total_regular_users'));
     }
 }

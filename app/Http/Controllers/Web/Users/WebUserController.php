@@ -4,13 +4,19 @@ namespace App\Http\Controllers\Web\Users;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\WebUserRequest;
-use App\Models\User;
+use App\Services\UserService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class WebUserController extends Controller
 {
+    protected $userService;
+
+    public function __construct(UserService $userService)
+    {
+        $this->userService = $userService;
+    }
+
     /**
      * Show create user form
      */
@@ -24,55 +30,16 @@ class WebUserController extends Controller
      */
     public function store(WebUserRequest $request): RedirectResponse
     {
-        try {
-            $validated = $request->validated();
-
-            // Hash password before creating user
-            $validated['password'] = bcrypt($validated['password']);
-
-            User::create($validated);
-
-            return redirect()->route('admin.users.index')->with('success', 'User created successfully');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Failed to create user: ' . $e->getMessage())->withInput();
-        }
+        $this->userService->create($request->validated());
+        return redirect()->route('admin.users.index')->with('success', 'User created successfully');
     }
 
     /**
      * List users
      */
-    public function index(Request $request): View
+    public function index(): View
     {
-        try {
-            $perPage = $request->query('per_page', 10);
-            $search = $request->query('search', '');
-            $sortBy = $request->query('sort_by', 'created_at');
-            $sortDir = $request->query('sort_dir', 'desc');
-
-            $query = User::query();
-
-            // Search functionality
-            if ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%");
-                });
-            }
-
-            // Sort functionality - whitelist allowed columns
-            $allowedSorts = ['name', 'email', 'role', 'created_at', 'last_login'];
-            if (in_array($sortBy, $allowedSorts)) {
-                $query->orderBy($sortBy, $sortDir === 'asc' ? 'asc' : 'desc');
-            } else {
-                $query->orderBy('created_at', 'desc');
-            }
-
-            $users = $query->paginate($perPage)->appends($request->query());
-
-            return view('users.index', compact('users', 'search', 'sortBy', 'sortDir'));
-        } catch (\Exception $e) {
-            return back()->with('error', 'Failed to load users: ' . $e->getMessage());
-        }
+        return view('users.index');
     }
 
     /**
@@ -80,12 +47,7 @@ class WebUserController extends Controller
      */
     public function show(int $id): View
     {
-        try {
-            $user = User::findOrFail($id);
-            return view('users.show', compact('user'));
-        } catch (\Exception $e) {
-            return back()->with('error', 'User not found');
-        }
+        return view('users.show', ['userId' => $id]);
     }
 
     /**
@@ -93,12 +55,7 @@ class WebUserController extends Controller
      */
     public function edit(int $id): View
     {
-        try {
-            $user = User::findOrFail($id);
-            return view('users.edit', compact('user'));
-        } catch (\Exception $e) {
-            return back()->with('error', 'User not found');
-        }
+        return view('users.edit', ['userId' => $id]);
     }
 
     /**
@@ -106,36 +63,16 @@ class WebUserController extends Controller
      */
     public function update(WebUserRequest $request, int $id): RedirectResponse
     {
-        try {
-            $user = User::findOrFail($id);
-            $validated = $request->validated();
-
-            $user->update($validated);
-
-            return redirect()->route('admin.users.index')->with('success', 'User updated successfully');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Failed to update user: ' . $e->getMessage())->withInput();
-        }
+        $this->userService->update($id, $request->validated());
+        return redirect()->route('admin.users.index')->with('success', 'User updated successfully');
     }
 
     /**
-     * Delete user (soft delete)
+     * Delete user
      */
     public function destroy(int $id): RedirectResponse
     {
-        try {
-            $user = User::findOrFail($id);
-
-            // Prevent deleting yourself
-            if ($user->id === auth()->id()) {
-                return back()->with('error', 'You cannot delete your own account');
-            }
-
-            $user->delete();
-
-            return redirect()->route('admin.users.index')->with('success', 'User deleted successfully');
-        } catch (\Exception $e) {
-            return back()->with('error', 'Failed to delete user: ' . $e->getMessage());
-        }
+        $this->userService->delete($id);
+        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully');
     }
 }

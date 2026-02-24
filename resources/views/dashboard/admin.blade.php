@@ -6,153 +6,50 @@
 <div class="space-y-6">
     <h1 class="text-2xl font-bold">Admin Dashboard</h1>
 
+    <!-- Loading indicator -->
+    <div id="loadingMessage" class="text-center text-gray-500 py-4">Loading dashboard...</div>
+
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div id="statsCards" class="grid grid-cols-1 md:grid-cols-4 gap-4 hidden">
         <div class="bg-white p-6 rounded-lg shadow">
             <p class="text-gray-500 text-sm">Total Users</p>
-            <p class="text-3xl font-bold text-blue-600">{{ $stats['total_users'] }}</p>
+            <p id="totalUsers" class="text-3xl font-bold text-blue-600">-</p>
         </div>
         <div class="bg-white p-6 rounded-lg shadow">
             <p class="text-gray-500 text-sm">Total Flights</p>
-            <p class="text-3xl font-bold text-green-600">{{ $stats['total_flights'] }}</p>
+            <p id="totalFlights" class="text-3xl font-bold text-green-600">-</p>
         </div>
         <div class="bg-white p-6 rounded-lg shadow">
             <p class="text-gray-500 text-sm">Admins</p>
-            <p class="text-3xl font-bold text-purple-600">{{ $stats['total_admins'] }}</p>
+            <p id="totalAdmins" class="text-3xl font-bold text-purple-600">-</p>
         </div>
         <div class="bg-white p-6 rounded-lg shadow">
             <p class="text-gray-500 text-sm">Regular Users</p>
-            <p class="text-3xl font-bold text-orange-600">{{ $stats['total_regular_users'] }}</p>
+            <p id="totalRegularUsers" class="text-3xl font-bold text-orange-600">-</p>
         </div>
     </div>
 
     <!-- Charts -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Line Chart -->
-        <div class="bg-white p-6 rounded-lg shadow md:col-span-2">
-            <h3 class="text-lg font-semibold mb-4">Revenue vs Expenses vs Profit</h3>
-            <canvas id="lineChart"></canvas>
+    <div id="chartsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6 hidden">
+        <!-- Line Chart Component -->
+        <div class="md:col-span-2">
+            <x-line-chart chartId="lineChart" title="Revenue vs Expenses vs Profit" />
         </div>
 
-        <!-- Bar Chart -->
-        <div class="bg-white p-6 rounded-lg shadow md:col-span-2">
-            <h3 class="text-lg font-semibold mb-4">Monthly Revenue vs Expenses</h3>
-            <canvas id="barChart"></canvas>
+        <!-- Bar Chart Component -->
+        <div class="md:col-span-2">
+            <x-bar-chart chartId="barChart" title="Monthly Revenue vs Expenses" />
         </div>
 
-        <!-- Pie Chart -->
-        <div class="bg-white p-6 rounded-lg shadow md:col-span-2">
-            <h3 class="text-lg font-semibold mb-4">Product Distribution</h3>
-            <div class="max-w-md mx-auto">
-                <canvas id="pieChart"></canvas>
-            </div>
+        <!-- Pie Chart Component -->
+        <div class="md:col-span-2">
+            <x-pie-chart chartId="pieChart" title="Product Distribution" />
         </div>
     </div>
+
+    <!-- Error display -->
+    <div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"></div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<script>
-    // Line Chart - Revenue, Expenses, Profit Margin
-    const lineCtx = document.getElementById('lineChart').getContext('2d');
-    new Chart(lineCtx, {
-        type: 'line',
-        data: {
-            labels: @json($lineChartData['data']['labels'] ?? []),
-            datasets: @json($lineChartData['data']['datasets'] ?? [])
-        },
-        options: {
-            responsive: true,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
-            plugins: {
-                legend: {
-                    position: 'top',
-                }
-            },
-            scales: {
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Bulan'
-                    }
-                },
-                y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    title: {
-                        display: true,
-                        text: 'USD'
-                    }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    grid: {
-                        drawOnChartArea: false,
-                    },
-                    title: {
-                        display: true,
-                        text: 'Profit (%)'
-                    }
-                }
-            }
-        }
-    });
-
-    // Bar Chart - Monthly Revenue vs Expenses
-    const barCtx = document.getElementById('barChart').getContext('2d');
-    new Chart(barCtx, {
-        type: 'bar',
-        data: {
-            labels: @json($barChartData['data']['labels'] ?? []),
-            datasets: @json($barChartData['data']['datasets'] ?? [])
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'top',
-                }
-            },
-            scales: {
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Month'
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'USD'
-                    }
-                }
-            }
-        }
-    });
-
-    // Pie Chart - Product Distribution
-    const pieCtx = document.getElementById('pieChart').getContext('2d');
-    new Chart(pieCtx, {
-        type: 'pie',
-        data: {
-            labels: @json($pieChartData['data']['labels'] ?? []),
-            datasets: @json($pieChartData['data']['datasets'] ?? [])
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'right',
-                }
-            }
-        }
-    });
-</script>
 @endsection
+
+@vite(['resources/js/pages/dashboard.js'])

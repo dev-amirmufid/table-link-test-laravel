@@ -23,17 +23,21 @@ class ApiUserRequest extends FormRequest
     public function rules(): array
     {
         $userId = $this->route('id');
+        $isCreate = !$this->route('id');
 
         return [
-            'name' => 'sometimes|string|max:255',
+            'name' => $isCreate ? 'required|string|max:255' : 'sometimes|string|max:255',
             'email' => [
-                'sometimes',
+                $isCreate ? 'required' : 'sometimes',
                 'string',
                 'email',
                 'max:255',
                 Rule::unique('users')->ignore($userId),
             ],
-            'role' => 'sometimes|in:admin,user',
+            'password' => $isCreate
+                ? 'required|string|min:8'
+                : 'sometimes|string|min:8',
+            'role' => $isCreate ? 'required|in:admin,user' : 'sometimes|in:admin,user',
         ];
     }
 
@@ -43,10 +47,15 @@ class ApiUserRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'name.required' => 'Name is required',
             'name.string' => 'Name must be a string',
             'name.max' => 'Name may not be greater than 255 characters',
+            'email.required' => 'Email is required',
             'email.email' => 'Email must be a valid email address',
             'email.unique' => 'Email has already been taken',
+            'password.required' => 'Password is required',
+            'password.min' => 'Password must be at least 8 characters',
+            'role.required' => 'Role is required',
             'role.in' => 'Role must be either admin or user',
         ];
     }

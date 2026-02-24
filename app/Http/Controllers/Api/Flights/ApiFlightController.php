@@ -5,20 +5,49 @@ namespace App\Http\Controllers\Api\Flights;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\ApiFlightRequest;
 use App\Models\Flight;
+use App\Services\FlightService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ApiFlightController extends Controller
 {
+    protected $flightService;
+
+    public function __construct(FlightService $flightService)
+    {
+        $this->flightService = $flightService;
+    }
+
+    /**
+     * Create new flight
+     */
+    public function store(ApiFlightRequest $request): JsonResponse
+    {
+        try {
+            $validated = $request->validated();
+            $flight = $this->flightService->create($validated);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Flight created successfully',
+                'flight' => $flight,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create flight: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     /**
      * List flights
      */
     public function index(Request $request): JsonResponse
     {
         try {
-            $perPage = $request->query('per_page', 10);
-            $flights = Flight::orderBy('departure_time', 'asc')
-                ->paginate($perPage);
+            $params = $request->query();
+            $flights = $this->flightService->getAll($params);
 
             return response()->json([
                 'success' => true,
@@ -123,7 +152,7 @@ class ApiFlightController extends Controller
     public function show(int $id): JsonResponse
     {
         try {
-            $flight = Flight::findOrFail($id);
+            $flight = $this->flightService->getById($id);
 
             return response()->json([
                 'success' => true,
@@ -143,10 +172,8 @@ class ApiFlightController extends Controller
     public function update(ApiFlightRequest $request, int $id): JsonResponse
     {
         try {
-            $flight = Flight::findOrFail($id);
             $validated = $request->validated();
-
-            $flight->update($validated);
+            $flight = $this->flightService->update($id, $validated);
 
             return response()->json([
                 'success' => true,
@@ -167,8 +194,7 @@ class ApiFlightController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
-            $flight = Flight::findOrFail($id);
-            $flight->delete();
+            $this->flightService->delete($id);
 
             return response()->json([
                 'success' => true,
