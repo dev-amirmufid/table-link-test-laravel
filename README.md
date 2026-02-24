@@ -35,11 +35,18 @@ docker-compose up -d --build
 ```
 
 This will start:
+
 - Laravel Application (PHP-FPM) - container: `tablelink-app`
 - MySQL Database (port 3306) - container: `tablelink-mysql`
 - Nginx Web Server (port 8000) - container: `tablelink-nginx`
 
-### 3. Configure Environment
+### 3. Generate Application Key
+
+```bash
+docker-compose exec app php artisan key:generate
+```
+
+### 4. Configure Environment
 
 The `.env` file is already configured for Docker. If you need to modify:
 
@@ -54,24 +61,25 @@ DB_USERNAME=root
 DB_PASSWORD=root
 ```
 
-### 4. Run Migrations
+### 5. Run Migrations
 
 ```bash
 docker-compose exec app php artisan migrate
 ```
 
-### 5. Seed Database
+### 6. Seed Database
 
 ```bash
 docker-compose exec app php artisan db:seed
 ```
 
 This creates:
+
 - 1 Admin user
 - 20 Dummy users
 - 10 Sample flights
 
-### 6. Build Assets (Optional)
+### 7. Build Assets (Optional)
 
 ```bash
 docker-compose exec app npm install
@@ -160,27 +168,29 @@ The application will be available at http://localhost:8000
 
 ## Accessing the Application
 
-| Service | URL |
-|---------|-----|
+| Service         | URL                   |
+| --------------- | --------------------- |
 | Web Application | http://localhost:8000 |
-| MySQL | localhost:3306 |
+| MySQL           | localhost:3306        |
 
 ## Demo Credentials
 
-| Role | Email | Password |
-|------|-------|----------|
-| **Admin** | admin@tablelink.com | 12345678 |
-| **User** | ahmad@example.com | password123 |
+| Role      | Email               | Password    |
+| --------- | ------------------- | ----------- |
+| **Admin** | admin@tablelink.com | 12345678    |
+| **User**  | ahmad@example.com   | password123 |
 
 ## Features
 
 ### Authentication
+
 - [x] User Registration (Web)
 - [x] User Login (Web + Session)
 - [x] API Authentication (Token-based with Sanctum)
 - [x] Role-based Access Control (Admin/User)
 
 ### User Management
+
 - [x] List Users (Admin)
 - [x] Create User (Admin)
 - [x] Delete User (Admin - Soft Delete)
@@ -190,6 +200,7 @@ The application will be available at http://localhost:8000
 > **Note**: Edit feature has been removed from User Management
 
 ### Dashboard (Admin)
+
 - [x] Statistics Cards
 - [x] Line Chart (User Registration Trend)
 - [x] Bar Chart (Flights by Airline)
@@ -197,6 +208,7 @@ The application will be available at http://localhost:8000
 - [x] Chart data fetched from API
 
 ### Flight Information
+
 - [x] List Flights
 - [x] Add Flight
 - [x] View Flight Details
@@ -208,6 +220,7 @@ The application will be available at http://localhost:8000
 ### Flight Search Filters
 
 The flight search applies default filters:
+
 - **From**: CGK (Jakarta)
 - **To**: DPS (Denpasar)
 - **Class**: Economy
@@ -218,54 +231,56 @@ The flight search applies default filters:
 
 ## API Endpoints
 
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| POST | /api/auth/register | Register new user | Public |
-| POST | /api/auth/login | Login (get token) | Public |
-| POST | /api/auth/logout | Logout | Auth |
-| GET | /api/auth/user | Get current user | Auth |
-| GET | /api/users | List users | Admin |
-| POST | /api/users | Create user | Admin |
-| DELETE | /api/users/{id} | Delete user | Admin |
-| GET | /api/dashboard/charts | Get chart data | Admin |
-| GET | /api/flights | List flights | Admin |
-| POST | /api/flights | Create flight | Admin |
-| POST | /api/flights/scrape | Scrape flights | Admin |
-| GET | /api/flights/{id} | View flight | Admin |
-| DELETE | /api/flights/{id} | Delete flight | Admin |
+| Method | Endpoint              | Description       | Access |
+| ------ | --------------------- | ----------------- | ------ |
+| POST   | /api/auth/register    | Register new user | Public |
+| POST   | /api/auth/login       | Login (get token) | Public |
+| POST   | /api/auth/logout      | Logout            | Auth   |
+| GET    | /api/auth/user        | Get current user  | Auth   |
+| GET    | /api/users            | List users        | Admin  |
+| POST   | /api/users            | Create user       | Admin  |
+| DELETE | /api/users/{id}       | Delete user       | Admin  |
+| GET    | /api/dashboard/charts | Get chart data    | Admin  |
+| GET    | /api/flights          | List flights      | Admin  |
+| POST   | /api/flights          | Create flight     | Admin  |
+| POST   | /api/flights/scrape   | Scrape flights    | Admin  |
+| GET    | /api/flights/{id}     | View flight       | Admin  |
+| DELETE | /api/flights/{id}     | Delete flight     | Admin  |
 
 ---
 
 ## Web Routes
 
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| GET | /login | Login page | Guest |
-| POST | /login | Submit login | Guest |
-| GET | /register | Register page | Guest |
-| POST | /register | Submit register | Guest |
-| POST | /logout | Logout | Auth |
-| GET | /dashboard | User dashboard | User |
-| GET | /admin/dashboard | Admin dashboard | Admin |
-| GET | /admin/users | User management | Admin |
-| POST | /admin/users | Create user | Admin |
-| DELETE | /admin/users/{id} | Delete user | Admin |
-| GET | /admin/users/{id} | View user | Admin |
-| GET | /admin/flights | Flight list | Admin |
-| POST | /admin/flights | Create flight | Admin |
-| DELETE | /admin/flights/{id} | Delete flight | Admin |
-| GET | /admin/flights/{id} | View flight | Admin |
+| Method | Endpoint            | Description     | Access |
+| ------ | ------------------- | --------------- | ------ |
+| GET    | /login              | Login page      | Guest  |
+| POST   | /login              | Submit login    | Guest  |
+| GET    | /register           | Register page   | Guest  |
+| POST   | /register           | Submit register | Guest  |
+| POST   | /logout             | Logout          | Auth   |
+| GET    | /dashboard          | User dashboard  | User   |
+| GET    | /admin/dashboard    | Admin dashboard | Admin  |
+| GET    | /admin/users        | User management | Admin  |
+| POST   | /admin/users        | Create user     | Admin  |
+| DELETE | /admin/users/{id}   | Delete user     | Admin  |
+| GET    | /admin/users/{id}   | View user       | Admin  |
+| GET    | /admin/flights      | Flight list     | Admin  |
+| POST   | /admin/flights      | Create flight   | Admin  |
+| DELETE | /admin/flights/{id} | Delete flight   | Admin  |
+| GET    | /admin/flights/{id} | View flight     | Admin  |
 
 ---
 
 ## Docker Configuration
 
 ### Container Names
+
 - `tablelink-app` - Laravel PHP-FPM application
 - `tablelink-mysql` - MySQL 8.0 database
 - `tablelink-nginx` - Nginx web server
 
 ### Port Mapping
+
 - **8000** - Web Application (Nginx)
 - **3306** - MySQL Database
 
@@ -396,6 +411,7 @@ The dashboard charts are implemented as reusable Blade components:
 - `<x-pie-chart>` - Pie chart for flight class distribution
 
 Example usage:
+
 ```blade
 <x-line-chart
     title="User Registration Trend"
@@ -409,9 +425,11 @@ Example usage:
 CSRF token is automatically included in all axios requests via `resources/js/bootstrap.js`:
 
 ```javascript
-const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+const csrfToken = document
+    .querySelector('meta[name="csrf-token"]')
+    ?.getAttribute("content");
 if (csrfToken) {
-    window.axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken;
+    window.axios.defaults.headers.common["X-CSRF-TOKEN"] = csrfToken;
 }
 ```
 

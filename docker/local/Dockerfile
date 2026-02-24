@@ -31,9 +31,6 @@ COPY . .
 # Install dependencies
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Generate application key
-RUN php artisan key:generate
-
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
