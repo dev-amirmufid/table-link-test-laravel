@@ -17,7 +17,7 @@ A Laravel 12 application with REST API and Web authentication for managing users
 - **Authentication**: Session-based (Web) + Token-based (API) with Laravel Sanctum
 - **Frontend**: Blade Templates + TailwindCSS + Chart.js
 - **Testing**: PHPUnit + Laravel Dusk
-- **Container**: Docker + Docker Compose
+- **Container**: Docker + Docker Compose + Nginx + PHP-FPM
 
 ## Installation
 
@@ -35,9 +35,9 @@ docker-compose up -d --build
 ```
 
 This will start:
-- Laravel Application (port 8000)
-- MySQL Database (port 3306)
-- Nginx Web Server (port 80)
+- Laravel Application (PHP-FPM) - container: `tablelink-app`
+- MySQL Database (port 3306) - container: `tablelink-mysql`
+- Nginx Web Server (port 8000) - container: `tablelink-nginx`
 
 ### 3. Configure Environment
 
@@ -182,24 +182,41 @@ The application will be available at http://localhost:8000
 
 ### User Management
 - [x] List Users (Admin)
-- [x] Edit User (Admin)
+- [x] Create User (Admin)
 - [x] Delete User (Admin - Soft Delete)
 - [x] Update User Role
+- [x] View User Details
+
+> **Note**: Edit feature has been removed from User Management
 
 ### Dashboard (Admin)
 - [x] Statistics Cards
 - [x] Line Chart (User Registration Trend)
 - [x] Bar Chart (Flights by Airline)
 - [x] Pie Chart (Flight Class Distribution)
+- [x] Chart data fetched from API
 
 ### Flight Information
 - [x] List Flights
 - [x] Add Flight
-- [x] Edit Flight
+- [x] View Flight Details
 - [x] Delete Flight
-- [x] Scrape Flights (Mockup Data)
+- [x] Search Flights with Default Filters
 
-### API Endpoints
+> **Note**: Edit feature has been removed from Flight Management
+
+### Flight Search Filters
+
+The flight search applies default filters:
+- **From**: CGK (Jakarta)
+- **To**: DPS (Denpasar)
+- **Class**: Economy
+- **Type**: One-way
+- **Departure Time**: Before 17:00
+
+---
+
+## API Endpoints
 
 | Method | Endpoint | Description | Access |
 |--------|----------|-------------|--------|
@@ -208,13 +225,18 @@ The application will be available at http://localhost:8000
 | POST | /api/auth/logout | Logout | Auth |
 | GET | /api/auth/user | Get current user | Auth |
 | GET | /api/users | List users | Admin |
-| PUT | /api/users/{id} | Update user | Admin |
+| POST | /api/users | Create user | Admin |
 | DELETE | /api/users/{id} | Delete user | Admin |
 | GET | /api/dashboard/charts | Get chart data | Admin |
 | GET | /api/flights | List flights | Admin |
+| POST | /api/flights | Create flight | Admin |
 | POST | /api/flights/scrape | Scrape flights | Admin |
+| GET | /api/flights/{id} | View flight | Admin |
+| DELETE | /api/flights/{id} | Delete flight | Admin |
 
-### Web Routes
+---
+
+## Web Routes
 
 | Method | Endpoint | Description | Access |
 |--------|----------|-------------|--------|
@@ -226,9 +248,28 @@ The application will be available at http://localhost:8000
 | GET | /dashboard | User dashboard | User |
 | GET | /admin/dashboard | Admin dashboard | Admin |
 | GET | /admin/users | User management | Admin |
+| POST | /admin/users | Create user | Admin |
+| DELETE | /admin/users/{id} | Delete user | Admin |
+| GET | /admin/users/{id} | View user | Admin |
 | GET | /admin/flights | Flight list | Admin |
+| POST | /admin/flights | Create flight | Admin |
+| DELETE | /admin/flights/{id} | Delete flight | Admin |
+| GET | /admin/flights/{id} | View flight | Admin |
 
-## Docker Commands
+---
+
+## Docker Configuration
+
+### Container Names
+- `tablelink-app` - Laravel PHP-FPM application
+- `tablelink-mysql` - MySQL 8.0 database
+- `tablelink-nginx` - Nginx web server
+
+### Port Mapping
+- **8000** - Web Application (Nginx)
+- **3306** - MySQL Database
+
+### Docker Commands
 
 ```bash
 # Start containers
@@ -245,7 +286,12 @@ docker-compose exec app bash
 
 # Rebuild containers
 docker-compose build --no-cache
+
+# Check container status
+docker-compose ps
 ```
+
+---
 
 ## Testing
 
@@ -278,6 +324,17 @@ php artisan dusk
 php artisan dusk --filter=LoginTest
 ```
 
+### Test Database Configuration
+
+Tests use separate database `tablelink_test` with the following configuration in `phpunit.xml`:
+
+```xml
+<env name="DB_HOST" value="127.0.0.1"/>
+<env name="DB_DATABASE" value="tablelink_test"/>
+```
+
+---
+
 ## Project Structure
 
 ```
@@ -288,28 +345,77 @@ tablelink/
 │   │   │   ├── Api/          # API Controllers
 │   │   │   └── Web/           # Web Controllers
 │   │   └── Middleware/
-│   │       ├── Api/          # API Middleware
-│   │       └── Web/           # Web Middleware
 │   ├── Models/
 │   │   ├── User.php
 │   │   └── Flight.php
-│   └── Services/
+│   ├── Services/
+│   │   └── FlightService.php
+│   └── View/
+│       └── Components/       # Reusable View Components
+│           ├── LineChart.php
+│           ├── BarChart.php
+│           └── PieChart.php
 ├── database/
 │   ├── migrations/
 │   ├── seeders/
 │   └── factories/
 ├── resources/
+│   ├── css/
+│   ├── js/
+│   │   ├── app.js
+│   │   ├── bootstrap.js      # Axios + CSRF token config
+│   │   └── pages/             # Page-specific JS
 │   └── views/
+│       ├── components/       # Blade components
+│       └── layouts/
 ├── routes/
 │   ├── api.php
 │   └── web.php
 ├── docker/
 │   ├── local/
+│   │   └── Dockerfile        # PHP-FPM configuration
 │   ├── mysql/
+│   │   └── local.cnf
 │   └── nginx/
+│       └── local.conf
 ├── docker-compose.yml
+├── vite.config.js
 └── .env
 ```
+
+---
+
+## Key Implementation Details
+
+### View Components
+
+The dashboard charts are implemented as reusable Blade components:
+
+- `<x-line-chart>` - Line chart for user registration trends
+- `<x-bar-chart>` - Bar chart for flights by airline
+- `<x-pie-chart>` - Pie chart for flight class distribution
+
+Example usage:
+```blade
+<x-line-chart
+    title="User Registration Trend"
+    chart-id="lineChart"
+    :data="$chartData"
+/>
+```
+
+### CSRF Token Handling
+
+CSRF token is automatically included in all axios requests via `resources/js/bootstrap.js`:
+
+```javascript
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+if (csrfToken) {
+    window.axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken;
+}
+```
+
+---
 
 ## Troubleshooting
 
@@ -335,6 +441,31 @@ docker-compose exec app php artisan config:clear
 docker-compose exec app php artisan cache:clear
 docker-compose exec app php artisan route:clear
 ```
+
+### 502 Bad Gateway Error
+
+If you encounter 502 Bad Gateway, ensure PHP-FPM is running:
+
+```bash
+# Check if PHP-FPM is running
+docker-compose exec app php-fpm
+
+# Rebuild containers
+docker-compose down
+docker-compose up -d --build
+```
+
+### Temp Directory Permission
+
+If you see tempnam() warnings, the PHP-FPM is configured with proper temp directories in `docker/local/Dockerfile`:
+
+```dockerfile
+RUN echo "[www]" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
+    && echo "php_admin_value[sys_temp_dir] = /tmp" >> /usr/local/etc/php-fpm.d/zz-docker.conf \
+    && echo "php_admin_value[open_basedir] = /tmp:/var/www/html" >> /usr/local/etc/php-fpm.d/zz-docker.conf
+```
+
+---
 
 ## License
 
